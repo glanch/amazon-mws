@@ -93,12 +93,17 @@ class MWSClient
     {
         try {
             $this->ListOrderItems('validate');
-        } catch (Exception $e) {
-            if ($e->getMessage() == 'Invalid AmazonOrderId: validate' || $e->getMessage() == 'The order id you have requested is not valid.') {
-                return true;
-            } else {
-                return false;
+        } catch(Exception $e) {
+            $validResponseSearchs = [
+                'invalid',
+                'not valid',
+            ];
+            foreach ($validResponseSearchs as $responseSearch) {
+                if (strpos(strtolower($e->getMessage()), $responseSearch) !== false) {
+                    return true;
+                }
             }
+            return false;
         }
     }
 
@@ -350,28 +355,29 @@ class MWSClient
 
     /**
      * Returns orders created or updated during a time frame that you specify.
-     * @param DateTime $from
-     * @param boolean $allMarketplaces , list orders from all marketplaces
-     * @param array $states , an array containing orders states you want to filter on
-     * @param string $FulfillmentChannels
-     * @param DateTime|null $till
+     * @param object DateTime $from, beginning of time frame
+     * @param boolean $allMarketplaces, list orders from all marketplaces
+     * @param array $states, an array containing orders states you want to filter on
+     * @param string $FulfillmentChannel
+     * @param object DateTime $till, end of time frame
+     * @param $updatedFrom, Use from date is CreatedAfter or LastUpdatedAfter
      * @return array
      * @throws Exception
      * @throws \GuzzleHttp\Exception\GuzzleException
      */
-    public function ListOrders(
-        DateTime $from,
-        $allMarketplaces = false,
-        $states = [
-            'Unshipped',
-            'PartiallyShipped'
-        ],
-        $FulfillmentChannels = 'MFN',
-        DateTime $till = null
-    ) {
-        $query = [
-            'CreatedAfter' => gmdate(self::DATE_FORMAT, $from->getTimestamp())
-        ];
+    public function ListOrders(DateTime $from, $allMarketplaces = false, $states = [
+        'Unshipped', 'PartiallyShipped'
+    ], $FulfillmentChannels = 'MFN', DateTime $till = null, $fromUpdated = false)
+    {
+        if ($fromUpdated) {
+            $query = [
+                'LastUpdatedAfter' => gmdate(self::DATE_FORMAT, $from->getTimestamp())
+            ];
+        } else {
+            $query = [
+                'CreatedAfter' => gmdate(self::DATE_FORMAT, $from->getTimestamp())
+            ];
+        }
         if ($till !== null) {
             $query['CreatedBefore'] = gmdate(self::DATE_FORMAT, $till->getTimestamp());
         }
@@ -882,6 +888,21 @@ class MWSClient
         $result = $this->request('GetFeedSubmissionResult', [
             'FeedSubmissionId' => $FeedSubmissionId
         ]);
+
+        if (isset($result['Message']['ProcessingReport'])) {
+            return $result['Message']['ProcessingReport'];
+        } else {
+            return $result;
+        }
+    }
+    /**
+     * Returns a list of all feed submissions submitted in the previous 90 days.
+     * @return array
+     */
+    public function GetFeedSubmissionList()
+    {
+        $result = $this->request('GetFeedSubmissionList');
+
         if (isset($result['Message']['ProcessingReport'])) {
             return $result['Message']['ProcessingReport'];
         } else {

@@ -5,7 +5,6 @@
 [![License](https://poser.pugx.org/mcs/amazon-mws/license)](https://packagist.org/packages/mcs/amazon-mws) 
 [![Total Downloads](https://poser.pugx.org/mcs/amazon-mws/downloads)](https://packagist.org/packages/mcs/amazon-mws)
 
-
 Interaction with the Amazon Api for vendors called MWS
 
 ### Change your composer.json file 
