@@ -1425,7 +1425,11 @@ class MWSClient
                     true
                 )
             );
-            $requestOptions['query'] = $query;
+            if ($endPoint['action'] === 'GetLowestPricedOffersForASIN' || $endPoint['action'] == 'GetLowestPricedOffersForSKU') {
+                $requestOptions['form_params'] = $query;
+            } else {
+                $requestOptions['query'] = $query;
+            }
 
             if ($this->client === null) {
                 $this->client = new Client();
